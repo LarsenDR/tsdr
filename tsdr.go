@@ -138,7 +138,7 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 	b = make([]byte, 64, 64)
 	c = make([]byte, 64, 64)
 
-	b, er := hex.DecodeString("effe07")
+	b, er := hex.DecodeString("effe02")
 	if er != nil {
 		err = fmt.Errorf("Hex decode error %v", er)
 		return nil, err
@@ -174,7 +174,6 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 		err = fmt.Errorf("Broadcast not connected %v, %v", k, er)
 		return nil, err
 	}
-
 	if strings.Contains(debug, "hex") {
 		fmt.Println("Discovery ")
 		fmt.Printf("sent : %s: %x : length=%d\n", bcast, b, len(b))

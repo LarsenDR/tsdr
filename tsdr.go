@@ -138,7 +138,7 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 	b = make([]byte, 64, 64)
 	c = make([]byte, 64, 64)
 
-	b, er := hex.DecodeString("effe02")
+	b, er := hex.DecodeString("effe07")
 	if er != nil {
 		err = fmt.Errorf("Hex decode error %v", er)
 		return nil, err
@@ -163,7 +163,7 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 
 	l, er := net.ListenUDP("udp", addr)
 	if er != nil {
-		err = fmt.Errorf("ListenUDP error %v", er)
+		err = fmt.Errorf("ListenUDP er{ror %v", er)
 		return nil, err
 	}
 	defer l.Close()
@@ -187,7 +187,7 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 	l.SetReadDeadline(time.Time(time.Now().Add(time.Duration(ddelay) * time.Second)))
 
 	//fmt.Println( "Before the loop" )
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 10; i++ {
 		_, ad, _ := l.ReadFromUDP(c)
 
 		if ad != nil {
@@ -209,21 +209,21 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 
 			str.Macaddress = fmt.Sprintf("%x:%x:%x:%x:%x:%x", c[3], c[4], c[5], c[6], c[7], c[8])
 
-			if c[10] == 0 {
+			if c[10] == 0x00 {
 				str.Board = "Metis"
-			} else if c[10] == 1 {
+			} else if c[10] == 0x01 {
 				str.Board = "Hermes"
-			} else if c[10] == 2 {
+			} else if c[10] == 0x02 {
 				str.Board = "Griffin"
-			} else if c[10] == 3 {
+			} else if c[10] == 0x03 {
 				str.Board = "Unknown"
-			} else if c[10] == 4 {
+			} else if c[10] == 0x04 {
 				str.Board = "Angelia"
-			} else if c[10] == 5 {
+			} else if c[10] == 0x05 {
 				str.Board = "Orion"
-			} else if c[10] == 6 {
+			} else if c[10] == 0x06 {
 				str.Board = "Hermes-lite"
-			} else if c[10] == 7 {
+			} else if c[10] == 0x0a {
 				str.Board = "TangerineSDR"
 			}
 

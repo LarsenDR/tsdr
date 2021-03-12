@@ -82,10 +82,10 @@ func Interfaces() (Intfc []Intface, err error) {
 					return Intfc, err
 				}
 
-				//str := strings.Split(Intfc[i].Ipv4, ".")
+				str := strings.Split(Intfc[i].Ipv4, ".")
 				var ipd []string
-				//ipd = append(ipd, str[0], str[1], str[2], "255")
-				ipd = append(ipd, "255", "255", "255", "255")
+				ipd = append(ipd, string(str[0]), string(str[1]), string(str[2]), "255")
+				//ipd = append(ipd, "255", "255", "255", "255")
 				Intfc[i].Ipv4Bcast = strings.Join(ipd, ".")
 			} else {
 				if runtime.GOOS == "windows" {
@@ -140,25 +140,26 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 
 	b, er := hex.DecodeString("effe02")
 	if er != nil {
-		err = fmt.Errorf("Hex decode error %v", er)
+		err = fmt.Errorf(" %v", er)
 		return nil, err
 	}
 
-	for i := 3; i < 64; i++ {
+	//b = append(b, st)
+
+	for i := len(b); i < 64; i++ {
 		b = append(b, 0x00)
-	}
-
-	//fmt.Println(addrStr, bcastStr)
-	addr, er := net.ResolveUDPAddr("udp", addrStr)
-	if er != nil {
-		err = fmt.Errorf("Address not resolved %v", er)
-		return nil, err
 	}
 
 	bcast, er := net.ResolveUDPAddr("udp", bcastStr)
 	if er != nil {
 		err = fmt.Errorf("Broadcast Address not resolved %v", er)
 		return nil, err
+	}
+
+	//fmt.Println(addrStr, bcastStr)
+	addr, er := net.ResolveUDPAddr("udp", addrStr)
+	if er != nil {
+
 	}
 
 	l, er := net.ListenUDP("udp", addr)
@@ -174,6 +175,7 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 		err = fmt.Errorf("Broadcast not connected %v, %v", k, er)
 		return nil, err
 	}
+
 	if strings.Contains(debug, "hex") {
 		fmt.Println("Discovery ")
 		fmt.Printf("sent : %s: %x : length=%d\n", bcast, b, len(b))
@@ -752,8 +754,8 @@ func Listinterface(itr Intface) {
 
 //Listflags is a convienience function to print flag data
 func Listflags(fg flagsettings) {
-	fmt.Printf("    Saved Settings: \n")
-	fmt.Printf("         Interface: %v\n", fg.Intface)
+	fmt.Printf("	Saved settings: \n")
+	fmt.Printf(" 		 Interface: %v\n", fg.Intface)
 	fmt.Printf("          Filename: %v\n", fg.Filename)
 	fmt.Printf("      Selected MAC: (%v)\n", fg.SelectMAC)
 	fmt.Printf("            SetRBF: %v\n", fg.SetRBF)
@@ -810,7 +812,7 @@ func Initflagstemp(fgt *flagtemp) {
 }
 
 //Parseflagstruct is a function to parse input flags
-func Parseflagstruct(fg *flagsettings, fgt *flagtemp, ifn string, stmac string, stip string, strbf string, db string, ss string, sv string, ld string, dd int, ed int) {
+func Parseflagstruct(fg *flagsettings, fgt *flagtemp, ifn string, stmac string, stip string, stport string, strbf string, db string, ss string, sv string, ld string, dd int, ed int) {
 
 	Initflags(fg)
 	Initflagstemp(fgt)
@@ -860,19 +862,8 @@ func Parseflagstruct(fg *flagsettings, fgt *flagtemp, ifn string, stmac string, 
 	if sv == "default" {
 		fgt.Save = sv
 		fg.Filename = "CmdHPSDRProgrammer.json"
-	} else if sv != "none" {
-		fg.Filename = sv
-		fgt.Save = sv
-	} else {
-		fgt.Save = sv
-	}
-	if ld == "default" {
-		fgt.Load = ld
-		fg.Filename = "CmdHPSDRProgrammer.json"
 	} else if ld != "none" {
 		fg.Filename = ld
-		fgt.Load = ld
-	} else {
 		fgt.Load = ld
 	}
 
@@ -884,6 +875,10 @@ func Parseflagstruct(fg *flagsettings, fgt *flagtemp, ifn string, stmac string, 
 		}
 
 		b, err := json.MarshalIndent(fg, "", "\t")
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if err != nil {
 			fmt.Println("error:", err)
 		}
@@ -907,6 +902,7 @@ func main() {
 	ifn := flag.String("interface", "none", "Select one interface")
 	stmac := flag.String("selectMAC", "none", "Select Board by MAC address")
 	stip := flag.String("setIP", "none", "Set IP address, unused number from your subnet or 0.0.0.0 for DHCP")
+	stport := flag.String("setPort", "1024", "Set port number")
 	strbf := flag.String("setRBF", "none", "Select the RBF file to write to the board")
 	dd := flag.Int("ddelay", 2, "Discovery delay before a rediscovery")
 	ed := flag.Int("edelay", 60, "Discovery delay before a rediscovery")
@@ -924,7 +920,7 @@ func main() {
 		usage()
 	}
 
-	Parseflagstruct(&fg, &fgt, *ifn, *stmac, *stip, *strbf, *db, *ss, *sv, *ld, *dd, *ed)
+	Parseflagstruct(&fg, &fgt, *ifn, *stmac, *stip, *stport, *strbf, *db, *ss, *sv, *ld, *dd, *ed)
 
 	intf, err := Interfaces()
 	if err != nil {
@@ -934,6 +930,7 @@ func main() {
 	if flag.NFlag() < 1 {
 		fmt.Printf("Interfaces on this Computer: \n")
 	}
+
 	for i := range intf {
 		if flag.NFlag() < 1 {
 			// if no flags list the interfaces in short form
@@ -958,8 +955,8 @@ func main() {
 
 				var adr string
 				var bcadr string
-				adr = intf[i].Ipv4 + ":1024"
-				bcadr = intf[i].Ipv4Bcast + ":1024"
+				adr = intf[i].Ipv4 + ":" + *stport
+				bcadr = intf[i].Ipv4Bcast + ":" + *stport
 
 				// perform a discovery
 				str, err := Discover(adr, bcadr, fg.Ddelay, fg.Debug)

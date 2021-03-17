@@ -123,6 +123,7 @@ type Hpsdrboard struct {
 	Board      string
 	Protocol   string
 	Baddress   string
+	Aport      string
 	Bport      string
 	Pcaddress  string
 	Macaddress string
@@ -179,16 +180,14 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 	if strings.Contains(debug, "hex") {
 		fmt.Println("Discovery ")
 		fmt.Printf("sent : %s: %x : length=%d\n", bcast, b, len(b))
-		fmt.Println(" ")
-	} else if strings.Contains(debug, "dec") {
-		fmt.Println("Discover ")
-		fmt.Printf("sent : %s: %v : length=%d\n", bcast, b, len(b))
+		//fmt.Printf("sent : %s: %v : length=%d\n", bcast, b, len(b))
 		fmt.Println(" ")
 	}
+
 	l.SetReadDeadline(time.Time(time.Now().Add(time.Duration(ddelay) * time.Second)))
 
 	//fmt.Println( "Before the loop" )
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 11; i++ { //11 is length of packet values
 		_, ad, _ := l.ReadFromUDP(c)
 
 		if ad != nil {
@@ -226,13 +225,21 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 				str.Board = "Hermes-lite"
 			} else if c[10] == 0x0a {
 				str.Board = "TangerineSDR"
+				vt := fmt.Sprintf("%x%x", c[10], c[11])
+				if s, err := strconv.ParseUint(vt, 16, 16); err == nil {
+					fmt.Printf("%T, %v\n", s, s)
+					str.Bport = fmt.Sprintf("%v", s)
+				} else {
+					str.Bport = "0"
+				}
+				// fmt.Printf("Bport %d\n", Bport)
 			}
 
 			str.Firmware = fmt.Sprintf("%d.%d", c[9]/10, c[9]%10)
 
 			st := strings.Split(ad.String(), ":")
 			str.Baddress = st[0]
-			str.Bport = st[1]
+			str.Aport = "1024"
 
 			strs = append(strs, str)
 		}
@@ -734,7 +741,12 @@ func Listboard(str Hpsdrboard) {
 	if str.Macaddress != "0:0:0:0:0:0" {
 		fmt.Printf("       HPSDR Board: (%s)\n", str.Macaddress)
 		fmt.Printf("              IPV4: %s\n", str.Baddress)
-		fmt.Printf("              Port: %s\n", str.Bport)
+		if str.Board == "TangerineSDR" {
+			fmt.Printf("            Port A: %s\n", str.Aport)
+			fmt.Printf("            Port B: %s\n", str.Bport)
+		} else {
+			fmt.Printf("              Port: %s\n", str.Aport)
+		}
 		fmt.Printf("              Type: %s\n", str.Board)
 		fmt.Printf("          Firmware: %s\n", str.Firmware)
 		fmt.Printf("            Status: %s\n\n", str.Status)

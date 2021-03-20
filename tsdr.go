@@ -225,9 +225,8 @@ func Discover(addrStr string, bcastStr string, ddelay int, debug string) (strs [
 				str.Board = "Hermes-lite"
 			} else if c[10] == 0x0a {
 				str.Board = "TangerineSDR"
-				vt := fmt.Sprintf("%x%x", c[10], c[11])
+				vt := fmt.Sprintf("%x%x", c[11], c[12])
 				if s, err := strconv.ParseUint(vt, 16, 16); err == nil {
-					fmt.Printf("%T, %v\n", s, s)
 					str.Bport = fmt.Sprintf("%v", s)
 				} else {
 					str.Bport = "0"
